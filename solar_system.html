@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Solar System Animation</title>
+  <style>
+    body {
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden; /* Hide scrollbars if animation goes off screen */
+    }
+    #sun {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background-color: yellow;
+      border-radius: 50%;
+      /* Centering will be handled by body flex properties for the sun itself,
+         planets will be positioned relative to the sun via JS */
+    }
+    .planet { /* Common properties for all planets */
+      position: absolute;
+      border-radius: 50%;
+    }
+    #mercury {
+      width: 10px;
+      height: 10px;
+      background-color: gray;
+    }
+    #venus {
+      width: 15px;
+      height: 15px;
+      background-color: #e6e6e6; /* Light gray */
+    }
+    #earth {
+      width: 20px;
+      height: 20px;
+      background-color: blue;
+    }
+    #mars {
+      width: 18px;
+      height: 18px;
+      background-color: red;
+    }
+    #jupiter {
+      width: 40px;
+      height: 40px;
+      background-color: orange;
+    }
+    #saturn {
+      width: 35px;
+      height: 35px;
+      background-color: #f0e68c; /* Khaki */
+    }
+    #uranus {
+      width: 30px;
+      height: 30px;
+      background-color: #add8e6; /* Light blue */
+    }
+    #neptune {
+      width: 28px;
+      height: 28px;
+      background-color: #00008b; /* Dark blue */
+    }
+    /* Optional: Faint orbit paths - this is a simplified version */
+    .orbit {
+        position: absolute;
+        border: 1px dashed #555; /* Faint, dashed lines for orbits */
+        border-radius: 50%;
+        /* The sun will be at the center of these orbits */
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%); /* Center the orbits */
+    }
+    #planet-tooltip {
+      position: absolute;
+      display: none;
+      background-color: #333;
+      color: white;
+      padding: 5px;
+      border-radius: 3px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div id="sun"></div>
+  
+  <!-- Orbit Paths (Optional but good for visualization) -->
+  <div class="orbit" style="width: 160px; height: 160px;"></div> <!-- Mercury's orbit -->
+  <div class="orbit" style="width: 240px; height: 240px;"></div> <!-- Venus' orbit -->
+  <div class="orbit" style="width: 320px; height: 320px;"></div> <!-- Earth's orbit -->
+  <div class="orbit" style="width: 400px; height: 400px;"></div> <!-- Mars' orbit -->
+  <div class="orbit" style="width: 560px; height: 560px;"></div> <!-- Jupiter's orbit -->
+  <div class="orbit" style="width: 720px; height: 720px;"></div> <!-- Saturn's orbit -->
+  <div class="orbit" style="width: 840px; height: 840px;"></div> <!-- Uranus' orbit -->
+  <div class="orbit" style="width: 960px; height: 960px;"></div> <!-- Neptune's orbit -->
+
+  <div id="mercury" class="planet"></div>
+  <div id="venus" class="planet"></div>
+  <div id="earth" class="planet"></div>
+  <div id="mars" class="planet"></div>
+  <div id="jupiter" class="planet"></div>
+  <div id="saturn" class="planet"></div>
+  <div id="uranus" class="planet"></div>
+  <div id="neptune" class="planet"></div>
+
+  <script>
+    const tooltip = document.createElement('div');
+    tooltip.id = 'planet-tooltip';
+    document.body.appendChild(tooltip);
+
+    const sun = document.getElementById('sun');
+    const planets = [
+      { id: 'mercury', name: 'Mercury', element: document.getElementById('mercury'), orbitRadius: 80, orbitSpeed: 0.04, currentAngle: Math.random() * 2 * Math.PI, size: 10 },
+      { id: 'venus', name: 'Venus', element: document.getElementById('venus'), orbitRadius: 120, orbitSpeed: 0.025, currentAngle: Math.random() * 2 * Math.PI, size: 15 },
+      { id: 'earth', name: 'Earth', element: document.getElementById('earth'), orbitRadius: 160, orbitSpeed: 0.018, currentAngle: Math.random() * 2 * Math.PI, size: 20 },
+      { id: 'mars', name: 'Mars', element: document.getElementById('mars'), orbitRadius: 200, orbitSpeed: 0.015, currentAngle: Math.random() * 2 * Math.PI, size: 18 },
+      { id: 'jupiter', name: 'Jupiter', element: document.getElementById('jupiter'), orbitRadius: 280, orbitSpeed: 0.008, currentAngle: Math.random() * 2 * Math.PI, size: 40 },
+      { id: 'saturn', name: 'Saturn', element: document.getElementById('saturn'), orbitRadius: 360, orbitSpeed: 0.006, currentAngle: Math.random() * 2 * Math.PI, size: 35 },
+      { id: 'uranus', name: 'Uranus', element: document.getElementById('uranus'), orbitRadius: 420, orbitSpeed: 0.004, currentAngle: Math.random() * 2 * Math.PI, size: 30 },
+      { id: 'neptune', name: 'Neptune', element: document.getElementById('neptune'), orbitRadius: 480, orbitSpeed: 0.003, currentAngle: Math.random() * 2 * Math.PI, size: 28 }
+    ];
+
+    planets.forEach(planet => {
+      planet.element.addEventListener('mouseover', (event) => {
+        tooltip.textContent = planet.name;
+        tooltip.style.display = 'block';
+      });
+      planet.element.addEventListener('mousemove', (event) => {
+        // Position tooltip near the mouse cursor
+        tooltip.style.left = (event.pageX + 10) + 'px';
+        tooltip.style.top = (event.pageY + 10) + 'px';
+      });
+      planet.element.addEventListener('mouseout', (event) => {
+        tooltip.style.display = 'none';
+      });
+    });
+
+    // Get sun's position. Assuming it's centered by CSS flexbox initially.
+    // The sun's div itself is centered by the body's flex properties.
+    // Planets will orbit relative to the viewport center, where the sun is.
+    const sunRect = sun.getBoundingClientRect();
+    // Calculate the effective center of the sun, relative to the viewport.
+    // Since body is flex centering, sun's top/left will be relative to its containing block (body)
+    // and its own center will be sunRect.left + sunRect.width / 2 and sunRect.top + sunRect.height / 2
+    // For simplicity, we assume the sun is perfectly centered in the viewport due to body styling.
+    // So, viewport center is window.innerWidth / 2 and window.innerHeight / 2.
+    const sunCenterX = window.innerWidth / 2;
+    const sunCenterY = window.innerHeight / 2;
+    
+    // Position sun explicitly in the center, overriding flex for planets' absolute positioning context
+    // This is crucial because planets are 'position: absolute' and will be relative to the nearest positioned ancestor.
+    // If body is the only one, their top/left would be relative to body.
+    // By making sun 'absolute' and positioning it, it becomes the reference for planets if they were nested.
+    // However, planets are not nested. They are siblings. So they are relative to body.
+    // The sun's CSS already has 'position: absolute'. Its centering is done by the body flex.
+    // We need to ensure this script respects that.
+
+    function update() {
+      planets.forEach(planet => {
+        planet.currentAngle += planet.orbitSpeed;
+        
+        // Calculate position relative to the sun's center (which is viewport center)
+        const x = sunCenterX + planet.orbitRadius * Math.cos(planet.currentAngle);
+        const y = sunCenterY + planet.orbitRadius * Math.sin(planet.currentAngle);
+        
+        // Adjust for the planet's own size to center it on its orbit path
+        planet.element.style.left = (x - planet.size / 2) + 'px';
+        planet.element.style.top = (y - planet.size / 2) + 'px';
+      });
+      
+      requestAnimationFrame(update);
+    }
+    
+    update();
+  </script>
+</body>
+</html>
